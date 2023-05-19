@@ -28,7 +28,25 @@ export default function Header() {
       </div>
 
       <button onClick={() => setIsOpen(true)}>
-        <Image src="/icon-hamburger.svg" alt="" width={20} height={17} className="h-[17px]" />
+        {isOpen ? (
+          <Image
+            src="/icon-close.svg"
+            alt=""
+            width={20}
+            height={17}
+            // h-[17px] is needed because tw has height-auto
+            className="animate-rotate h-[17px]"
+          />
+        ) : (
+          <Image
+            src="/icon-hamburger.svg"
+            alt=""
+            width={20}
+            height={17}
+            // h-[17px] is needed because tw has height-auto
+            className="animate-appear h-[17px]"
+          />
+        )}
       </button>
 
       {/* modify --header-height if header height changes */}
@@ -53,7 +71,7 @@ export default function Header() {
             />
             <Dialog.Panel
               className={clsx(
-                'fixed right-0 top-[var(--header-height)] z-10 flex h-[calc(100vh_-_var(--header-height))] w-72 flex-col gap-6 bg-ghost-white p-6 transition-transform duration-300 ease-out',
+                'fixed right-0 top-[var(--header-height)] z-10 flex h-[calc(100vh_-_var(--header-height))] w-72 flex-col gap-6 bg-ghost-white p-6 transition-transform duration-300 ease-out ',
                 open ? 'translate-x-0' : 'translate-x-full',
               )}
             >

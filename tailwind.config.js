@@ -18,13 +18,17 @@ module.exports = {
         'ocean-night': '#647196',
       },
       keyframes: {
-        'slide-in': {
-          '0%': { transform: 'translateX(100%)' },
-          '100%': { transform: 'translateX(0)' },
+        rotate: {
+          '100%': { transform: 'rotate(360deg)' },
+        },
+        appear: {
+          '0%': { opacity: 0 },
+          '100%': { opacity: 1 },
         },
       },
       animation: {
-        'slide-in': 'slide-in 500ms ease-out ',
+        rotate: 'rotate 350ms 1',
+        appear: 'appear 500ms 1',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
