@@ -33,6 +33,7 @@ export default function Header() {
 
       {/* modify --header-height if header height changes */}
       <Dialog
+        static
         open={isOpen}
         onClose={() => setIsOpen(false)}
         style={
@@ -41,55 +42,60 @@ export default function Header() {
           } as CSSProperties
         }
       >
-        {({ open }) => {
-          return (
-            <>
-              <div className="fixed inset-0 top-[var(--header-height)] bg-black/30" aria-hidden="true" />
-              <Dialog.Panel
-                className={clsx(
-                  'fixed right-0 top-[var(--header-height)] z-10 flex h-[calc(100vh_-_var(--header-height))] w-72 animate-slide-in flex-col gap-6 bg-ghost-white p-6 transition-transform duration-1000',
-                )}
-              >
-                <PanelSection>
-                  <div className="flex flex-wrap gap-2">
-                    {CATEGORIES.map((category) => (
-                      <button key={category} className="rounded-md bg-cotton-ball px-4 py-1 text-sm font-semibold ">
-                        {category}
-                      </button>
+        {({ open }) => (
+          <>
+            <div
+              className={clsx(
+                'fixed inset-0 top-[var(--header-height)] bg-black/30 transition-opacity duration-500',
+                open ? 'opacity-100' : 'opacity-0',
+              )}
+              aria-hidden="true"
+            />
+            <Dialog.Panel
+              className={clsx(
+                'fixed right-0 top-[var(--header-height)] z-10 flex h-[calc(100vh_-_var(--header-height))] w-72 flex-col gap-6 bg-ghost-white p-6 transition-transform duration-300 ease-out',
+                open ? 'translate-x-0' : 'translate-x-full',
+              )}
+            >
+              <PanelSection>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIES.map((category) => (
+                    <button key={category} className="rounded-md bg-cotton-ball px-4 py-1 text-sm font-semibold ">
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </PanelSection>
+              <PanelSection>
+                <div className="flex flex-col gap-6">
+                  <div className="flex items-baseline justify-between">
+                    <strong className="text-lg font-bold text-jewel-cave">Roadmap</strong>
+                    <Link href="/" className="text-sm font-semibold text-rainbow-fish underline">
+                      View
+                    </Link>
+                  </div>
+                  <ul className="flex flex-col gap-2">
+                    {STATUS.map((s) => (
+                      <li key={s.label} className="flex justify-between">
+                        <span
+                          style={
+                            {
+                              '--before-color': s.color,
+                            } as CSSProperties
+                          }
+                          className="flex items-center gap-4 text-ocean-night before:block before:h-2 before:w-2 before:rounded-full before:bg-[var(--before-color)]"
+                        >
+                          {s.label}
+                        </span>
+                        <span className="font-bold text-ocean-night">2</span>
+                      </li>
                     ))}
-                  </div>
-                </PanelSection>
-                <PanelSection>
-                  <div className="flex flex-col gap-6">
-                    <div className="flex items-baseline justify-between">
-                      <strong className="text-lg font-bold text-jewel-cave">Roadmap</strong>
-                      <Link href="/" className="text-sm font-semibold text-rainbow-fish underline">
-                        View
-                      </Link>
-                    </div>
-                    <ul className="flex flex-col gap-2">
-                      {STATUS.map((s) => (
-                        <li key={s.label} className="flex justify-between">
-                          <span
-                            style={
-                              {
-                                '--before-color': s.color,
-                              } as CSSProperties
-                            }
-                            className="flex items-center gap-4 text-ocean-night before:block before:h-2 before:w-2 before:rounded-full before:bg-[var(--before-color)]"
-                          >
-                            {s.label}
-                          </span>
-                          <span className="font-bold text-ocean-night">2</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </PanelSection>
-              </Dialog.Panel>
-            </>
-          )
-        }}
+                  </ul>
+                </div>
+              </PanelSection>
+            </Dialog.Panel>
+          </>
+        )}
       </Dialog>
     </header>
   )
