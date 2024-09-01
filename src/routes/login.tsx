@@ -1,7 +1,12 @@
+import { createFileRoute } from "@tanstack/react-router";
 import { FaGithub, FaGoogle } from "react-icons/fa";
-import { apiURL } from "./lib";
+import { apiURL } from "../lib";
 
-function App() {
+export const Route = createFileRoute("/login")({
+  component: () => <Login />,
+});
+
+export function Login() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -104,5 +109,3 @@ function App() {
     </main>
   );
 }
-
-export default App;
