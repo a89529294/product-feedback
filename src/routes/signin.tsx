@@ -1,29 +1,22 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { FaGithub, FaGoogle } from "react-icons/fa";
-import { apiURL } from "../lib";
+import { useAuth } from "../contexts/auth";
 
-export const Route = createFileRoute("/login")({
-  component: () => <Login />,
+export const Route = createFileRoute("/signin")({
+  component: () => <Signin />,
 });
 
-export function Login() {
+export function Signin() {
+  const { signin } = useAuth();
+  const navigate = useNavigate({ from: "/signin" });
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    const res = await fetch(`${apiURL}/signup`, {
-      method: "POST",
-      body: JSON.stringify({
-        username: formData.get("username"),
-        password: formData.get("password"),
-      }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    const data = await res.json();
-    console.log(data);
+    console.log(1);
+    await signin(formData);
+    console.log(2);
+    navigate({ to: "/feedback" });
   }
   return (
     <main className="flex items-center h-screen">
@@ -32,7 +25,7 @@ export function Login() {
           Welcome to <span className="text-primary">Product Feedback</span>
         </h1>
         <h2 className="mb-8 text-2xl font-bold text-center">
-          Create your account
+          Sign in to your account
         </h2>
 
         <form onSubmit={onSubmit}>
@@ -62,16 +55,16 @@ export function Login() {
                 <input type="checkbox" name="remember-me" />
                 Remember me
               </label>
-              {/* <button type="button" className="font-medium text-secondary-blue">
+              <button type="button" className="font-medium text-secondary-blue">
                 Forgot your password?
-              </button> */}
+              </button>
             </div>
 
             <button
               type="submit"
               className="w-full h-10 text-white rounded-md bg-primary"
             >
-              Sign up
+              Sign in
             </button>
           </fieldset>
         </form>
@@ -98,10 +91,14 @@ export function Login() {
 
           <div className="flex justify-center mt-5">
             <p>
-              Already have an account?{" "}
-              <button className="font-medium text-secondary-blue">
-                Sign in
-              </button>
+              Don't have an account?{" "}
+              <Link
+                from="/signin"
+                to="/signup"
+                className="font-medium text-secondary-blue"
+              >
+                Sign up
+              </Link>
             </p>
           </div>
         </div>

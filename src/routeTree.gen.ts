@@ -13,11 +13,11 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as SignUpImport } from './routes/sign-up'
-import { Route as LoginImport } from './routes/login'
+import { Route as SignupImport } from './routes/signup'
+import { Route as SigninImport } from './routes/signin'
 import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
-import { Route as AuthIndexImport } from './routes/_auth.index'
+import { Route as AuthFeedbackImport } from './routes/_auth.feedback'
 
 // Create Virtual Routes
 
@@ -30,13 +30,13 @@ const AboutLazyRoute = AboutLazyImport.update({
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/about.lazy').then((d) => d.Route))
 
-const SignUpRoute = SignUpImport.update({
-  path: '/sign-up',
+const SignupRoute = SignupImport.update({
+  path: '/signup',
   getParentRoute: () => rootRoute,
 } as any)
 
-const LoginRoute = LoginImport.update({
-  path: '/login',
+const SigninRoute = SigninImport.update({
+  path: '/signin',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -50,8 +50,8 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AuthIndexRoute = AuthIndexImport.update({
-  path: '/',
+const AuthFeedbackRoute = AuthFeedbackImport.update({
+  path: '/feedback',
   getParentRoute: () => AuthRoute,
 } as any)
 
@@ -73,18 +73,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthImport
       parentRoute: typeof rootRoute
     }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginImport
+    '/signin': {
+      id: '/signin'
+      path: '/signin'
+      fullPath: '/signin'
+      preLoaderRoute: typeof SigninImport
       parentRoute: typeof rootRoute
     }
-    '/sign-up': {
-      id: '/sign-up'
-      path: '/sign-up'
-      fullPath: '/sign-up'
-      preLoaderRoute: typeof SignUpImport
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupImport
       parentRoute: typeof rootRoute
     }
     '/about': {
@@ -94,11 +94,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutLazyImport
       parentRoute: typeof rootRoute
     }
-    '/_auth/': {
-      id: '/_auth/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthIndexImport
+    '/_auth/feedback': {
+      id: '/_auth/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof AuthFeedbackImport
       parentRoute: typeof AuthImport
     }
   }
@@ -108,9 +108,9 @@ declare module '@tanstack/react-router' {
 
 export const routeTree = rootRoute.addChildren({
   IndexRoute,
-  AuthRoute: AuthRoute.addChildren({ AuthIndexRoute }),
-  LoginRoute,
-  SignUpRoute,
+  AuthRoute: AuthRoute.addChildren({ AuthFeedbackRoute }),
+  SigninRoute,
+  SignupRoute,
   AboutLazyRoute,
 })
 
@@ -124,8 +124,8 @@ export const routeTree = rootRoute.addChildren({
       "children": [
         "/",
         "/_auth",
-        "/login",
-        "/sign-up",
+        "/signin",
+        "/signup",
         "/about"
       ]
     },
@@ -135,20 +135,20 @@ export const routeTree = rootRoute.addChildren({
     "/_auth": {
       "filePath": "_auth.tsx",
       "children": [
-        "/_auth/"
+        "/_auth/feedback"
       ]
     },
-    "/login": {
-      "filePath": "login.tsx"
+    "/signin": {
+      "filePath": "signin.tsx"
     },
-    "/sign-up": {
-      "filePath": "sign-up.tsx"
+    "/signup": {
+      "filePath": "signup.tsx"
     },
     "/about": {
       "filePath": "about.lazy.tsx"
     },
-    "/_auth/": {
-      "filePath": "_auth.index.tsx",
+    "/_auth/feedback": {
+      "filePath": "_auth.feedback.tsx",
       "parent": "/_auth"
     }
   }

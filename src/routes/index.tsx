@@ -1,6 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Login } from "./login";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
-  component: () => <Login />,
+  component: () => <IndexPage />,
 });
+
+function IndexPage() {
+  return <Navigate to="/signin" />;
+}

@@ -6,7 +6,7 @@ type Status = "idle" | "validating";
 export interface AuthContext {
   isAuthenticated: boolean;
   signup: (formData: FormData) => Promise<void>;
-  login: (username: string) => Promise<void>;
+  signin: (formData: FormData) => Promise<void>;
   logout: () => Promise<void>;
   user: string | null;
 }
@@ -40,14 +40,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  const login = React.useCallback(async (username: string) => {
-    setUser(username);
+  const signin = React.useCallback(async (formData: FormData) => {
+    const res = await fetch(`${apiURL}/signin`, {
+      method: "POST",
+      body: JSON.stringify({
+        username: formData.get("username"),
+        password: formData.get("password"),
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include", // try removing this
+    });
+
+    if (!res.ok) console.log(res.status);
+    else {
+      setUser(formData.get("username") as string);
+    }
   }, []);
 
   React.useEffect(() => {
     (async () => {
       setStatus("validating");
-      const res = await fetch(`${apiURL}/validate-session`);
+      const href = window.location.pathname;
+      console.log(href);
+      const res = await fetch(`${apiURL}/validate-session`, {
+        credentials: "include",
+      });
       setStatus("idle");
       if (!res.ok) setUser(null);
       else {
@@ -59,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, user, login, logout, signup }}
+      value={{ isAuthenticated, user, signin, logout, signup }}
     >
       {status === "idle" ? children : null}
     </AuthContext.Provider>

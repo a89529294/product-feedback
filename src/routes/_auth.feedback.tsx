@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { useAuth } from "../contexts/auth";
 
-export const Route = createFileRoute("/_auth/")({
+export const Route = createFileRoute("/_auth/feedback")({
   component: IndexPage,
 });
 

@@ -1,24 +1,18 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { FaGithub, FaGoogle } from "react-icons/fa";
-import { apiURL } from "./lib";
+import { useAuth } from "../contexts/auth";
 
-function App() {
+export const Route = createFileRoute("/signup")({
+  component: () => <Signup />,
+});
+
+export function Signup() {
+  const { signup } = useAuth();
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    const res = await fetch(`${apiURL}/signup`, {
-      method: "POST",
-      body: JSON.stringify({
-        username: formData.get("username"),
-        password: formData.get("password"),
-      }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    const data = await res.json();
-    console.log(data);
+    signup(formData);
   }
   return (
     <main className="flex items-center h-screen">
@@ -94,9 +88,13 @@ function App() {
           <div className="flex justify-center mt-5">
             <p>
               Already have an account?{" "}
-              <button className="font-medium text-secondary-blue">
+              <Link
+                from="/signup"
+                to="/signin"
+                className="font-medium text-secondary-blue"
+              >
                 Sign in
-              </button>
+              </Link>
             </p>
           </div>
         </div>
@@ -104,5 +102,3 @@ function App() {
     </main>
   );
 }
-
-export default App;
