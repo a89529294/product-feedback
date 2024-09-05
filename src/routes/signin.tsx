@@ -1,25 +1,48 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  useRouter,
+  redirect,
+  Navigate,
+} from "@tanstack/react-router";
 import { FaGithub, FaGoogle } from "react-icons/fa";
 import { useAuth } from "../contexts/auth";
+import { z } from "zod";
+
+const fallback = "/feedback";
 
 export const Route = createFileRoute("/signin")({
+  validateSearch: z.object({
+    redirect: z.string().optional().catch(""),
+  }),
+  beforeLoad: ({ context, search }) => {
+    console.log(context, search);
+    if (context.auth.isAuthenticated) {
+      throw redirect({ to: search.redirect || fallback });
+    }
+  },
   component: () => <Signin />,
 });
 
 export function Signin() {
-  const { signin } = useAuth();
-  const navigate = useNavigate({ from: "/signin" });
+  const router = useRouter();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const { signin, isAuthenticated } = useAuth();
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    console.log(1);
     await signin(formData);
-    console.log(2);
-    navigate({ to: "/feedback" });
+
+    await router.invalidate();
+
+    await navigate({ to: search.redirect || fallback });
   }
   return (
     <main className="flex items-center h-screen">
+      {isAuthenticated && <Navigate to={search.redirect || fallback} />}
       <div className="mx-auto w-80 md:w-96">
         <h1 className="mb-4 text-2xl font-bold text-center">
           Welcome to <span className="text-primary">Product Feedback</span>

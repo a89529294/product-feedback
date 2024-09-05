@@ -1,7 +1,6 @@
 import * as React from "react";
 import { apiURL } from "../lib";
-
-type Status = "idle" | "validating";
+import { flushSync } from "react-dom";
 
 export interface AuthContext {
   isAuthenticated: boolean;
@@ -14,7 +13,6 @@ export interface AuthContext {
 const AuthContext = React.createContext<AuthContext | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = React.useState<Status>("idle");
   const [user, setUser] = React.useState<string | null>(null);
   const isAuthenticated = !!user;
 
@@ -50,24 +48,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include", // try removing this
+      credentials: "include",
     });
 
     if (!res.ok) console.log(res.status);
     else {
-      setUser(formData.get("username") as string);
+      flushSync(() => setUser(formData.get("username") as string));
     }
   }, []);
 
   React.useEffect(() => {
     (async () => {
-      setStatus("validating");
-      const href = window.location.pathname;
-      console.log(href);
       const res = await fetch(`${apiURL}/validate-session`, {
         credentials: "include",
       });
-      setStatus("idle");
       if (!res.ok) setUser(null);
       else {
         const data = await res.json();
@@ -80,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{ isAuthenticated, user, signin, logout, signup }}
     >
-      {status === "idle" ? children : null}
+      {children}
     </AuthContext.Provider>
   );
 }
