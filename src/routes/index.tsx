@@ -5,5 +5,5 @@ export const Route = createFileRoute("/")({
 });
 
 function IndexPage() {
-  return <Navigate to="/signin" />;
+  return <Navigate to="/feedback" />;
 }

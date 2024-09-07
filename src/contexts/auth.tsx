@@ -4,15 +4,18 @@ import { flushSync } from "react-dom";
 
 export interface AuthContext {
   isAuthenticated: boolean;
+  isEmailVerified: boolean;
   signup: (formData: FormData) => Promise<void>;
   signin: (formData: FormData) => Promise<void>;
-  logout: () => Promise<void>;
+  signout: () => Promise<void>;
+  verifyEmail: (verificationCode: string) => Promise<void>;
   user: string | null;
 }
 
 const AuthContext = React.createContext<AuthContext | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [isEmailVerified, setIsEmailVerified] = React.useState(false);
   const [user, setUser] = React.useState<string | null>(null);
   const isAuthenticated = !!user;
 
@@ -20,29 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await fetch(`${apiURL}/signup`, {
       method: "POST",
       body: JSON.stringify({
-        username: formData.get("username"),
-        password: formData.get("password"),
-      }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!res.ok) console.log(res.status);
-    else {
-      setUser(formData.get("username") as string);
-    }
-  }, []);
-
-  const logout = React.useCallback(async () => {
-    setUser(null);
-  }, []);
-
-  const signin = React.useCallback(async (formData: FormData) => {
-    const res = await fetch(`${apiURL}/signin`, {
-      method: "POST",
-      body: JSON.stringify({
-        username: formData.get("username"),
+        email: formData.get("email"),
         password: formData.get("password"),
       }),
       headers: {
@@ -53,26 +34,93 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!res.ok) console.log(res.status);
     else {
-      flushSync(() => setUser(formData.get("username") as string));
+      flushSync(() => {
+        setUser(formData.get("email") as string);
+        setIsEmailVerified(false);
+      });
+    }
+  }, []);
+
+  const signout = React.useCallback(async () => {
+    await fetch(`${apiURL}/signout`, {
+      method: "POST",
+      credentials: "include",
+    });
+
+    flushSync(() => setUser(null));
+  }, []);
+
+  const signin = React.useCallback(async (formData: FormData) => {
+    const res = await fetch(`${apiURL}/signin`, {
+      method: "POST",
+      body: JSON.stringify({
+        email: formData.get("email"),
+        password: formData.get("password"),
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+
+    if (!res.ok) console.log(res.status);
+    else {
+      flushSync(() => setUser(formData.get("email") as string));
+    }
+  }, []);
+
+  const verifyEmail = React.useCallback(async (verificationCode: string) => {
+    const res = await fetch(`${apiURL}/email-verification`, {
+      method: "POST",
+      body: JSON.stringify({
+        verificationCode,
+      }),
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!res.ok) console.log(res.status);
+    else {
+      flushSync(() => {
+        setIsEmailVerified(true);
+      });
     }
   }, []);
 
   React.useEffect(() => {
     (async () => {
-      const res = await fetch(`${apiURL}/validate-session`, {
-        credentials: "include",
-      });
-      if (!res.ok) setUser(null);
-      else {
-        const data = await res.json();
-        setUser(data.username);
+      try {
+        const res = await fetch(`${apiURL}/validate-session`, {
+          credentials: "include",
+        });
+
+        if (!res.ok) setUser(null);
+        else {
+          const data = await res.json();
+          flushSync(() => {
+            setUser(data.email);
+            setIsEmailVerified(data.emailVerified);
+          });
+        }
+      } catch (e) {
+        console.log(e);
       }
     })();
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, user, signin, logout, signup }}
+      value={{
+        isAuthenticated,
+        isEmailVerified,
+        user,
+        signin,
+        signout,
+        signup,
+        verifyEmail,
+      }}
     >
       {children}
     </AuthContext.Provider>

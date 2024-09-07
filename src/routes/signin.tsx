@@ -8,17 +8,22 @@ import {
 import { FaGithub, FaGoogle } from "react-icons/fa";
 import { useAuth } from "../contexts/auth";
 import { z } from "zod";
-
-const fallback = "/feedback";
+import { fallbackPath } from "../lib";
 
 export const Route = createFileRoute("/signin")({
   validateSearch: z.object({
     redirect: z.string().optional().catch(""),
   }),
-  beforeLoad: ({ context, search }) => {
-    console.log(context, search);
-    if (context.auth.isAuthenticated) {
-      throw redirect({ to: search.redirect || fallback });
+  beforeLoad: ({
+    context: {
+      auth: { isAuthenticated, isEmailVerified },
+    },
+    search,
+  }) => {
+    if (isAuthenticated && isEmailVerified) {
+      throw redirect({ to: search.redirect || fallbackPath });
+    } else if (isAuthenticated) {
+      throw redirect({ to: "/verify-email" });
     }
   },
   component: () => <Signin />,
@@ -38,11 +43,11 @@ export function Signin() {
 
     await router.invalidate();
 
-    await navigate({ to: search.redirect || fallback });
+    await navigate({ to: search.redirect || fallbackPath });
   }
   return (
     <main className="flex items-center h-screen">
-      {isAuthenticated && <Navigate to={search.redirect || fallback} />}
+      {isAuthenticated && <Navigate to={search.redirect || fallbackPath} />}
       <div className="mx-auto w-80 md:w-96">
         <h1 className="mb-4 text-2xl font-bold text-center">
           Welcome to <span className="text-primary">Product Feedback</span>
@@ -54,11 +59,11 @@ export function Signin() {
         <form onSubmit={onSubmit}>
           <fieldset className="space-y-8">
             <label className="flex flex-col gap-1 ">
-              <span className="text-sm font-medium">Email Address</span>
+              <span className="text-sm font-medium">email</span>
               <input
-                type="text"
+                type="email"
                 className="w-full h-10 border border-transparent rounded-md focus:ring-0 focus:border-secondary-blue bg-pale-grey"
-                name="username"
+                name="email"
               />
             </label>
 

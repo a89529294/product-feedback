@@ -8,14 +8,23 @@ import {
 import { useAuth } from "../contexts/auth";
 
 export const Route = createFileRoute("/_auth")({
-  beforeLoad: ({ context, location }) => {
-    if (!context.auth.isAuthenticated) {
+  beforeLoad: ({
+    context: {
+      auth: { isAuthenticated, isEmailVerified },
+    },
+    location,
+  }) => {
+    if (!isAuthenticated && !isEmailVerified) {
       throw redirect({
         to: "/signin",
         search: {
           redirect: location.href,
         },
       });
+    }
+
+    if (isAuthenticated && !isEmailVerified) {
+      throw redirect({ to: "/verify-email" });
     }
   },
   component: AuthLayout,
@@ -27,13 +36,11 @@ function AuthLayout() {
   const auth = useAuth();
 
   const handleLogout = () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      auth.logout().then(() => {
-        router.invalidate().finally(() => {
-          navigate({ to: "/" });
-        });
+    auth.signout().then(() => {
+      router.invalidate().finally(() => {
+        navigate({ to: "/signin" });
       });
-    }
+    });
   };
 
   return (
