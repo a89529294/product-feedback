@@ -9,6 +9,8 @@ import { FaGithub, FaGoogle } from "react-icons/fa";
 import { useAuth } from "../contexts/auth";
 import { z } from "zod";
 import { fallbackPath } from "../lib";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/signup")({
   validateSearch: z.object({
@@ -34,11 +36,18 @@ export function Signup() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const { signup, isAuthenticated } = useAuth();
+  const [isVerifying, setIsVerifying] = useState(false);
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    setIsVerifying(true);
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    await signup(formData);
+    await new Promise((r) => setTimeout(r, 1000));
+    const errorMessage = await signup(formData);
+    setIsVerifying(false);
+
+    if (errorMessage) return toast.error(errorMessage);
 
     await router.invalidate();
 
@@ -72,24 +81,16 @@ export function Signup() {
                 type="password"
                 className="w-full h-10 border border-transparent rounded-md focus:ring-0 focus:border-secondary-blue bg-pale-grey"
                 name="password"
+                minLength={6}
               />
             </label>
           </fieldset>
 
           <fieldset>
-            <div className="flex justify-between my-5 text-sm">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" name="remember-me" />
-                Remember me
-              </label>
-              {/* <button type="button" className="font-medium text-secondary-blue">
-                Forgot your password?
-              </button> */}
-            </div>
-
             <button
               type="submit"
-              className="w-full h-10 text-white rounded-md bg-primary"
+              className="w-full h-10 mt-5 text-white rounded-md bg-primary disabled:opacity-50"
+              disabled={isVerifying}
             >
               Sign up
             </button>

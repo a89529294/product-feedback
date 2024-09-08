@@ -1,5 +1,7 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useAuth } from "../contexts/auth";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/verify-email")({
   beforeLoad: ({
@@ -19,17 +21,30 @@ export const Route = createFileRoute("/verify-email")({
 export default function EmailVerification() {
   const router = useRouter();
   const navigate = Route.useNavigate();
-  const { verifyEmail } = useAuth();
+  const { verifyEmail, user, signout } = useAuth();
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const onSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
+    setIsVerifying(true);
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    await verifyEmail(formData.get("verificationCode") as string);
+    await new Promise((r) => setTimeout(r, 1000));
+    const errorMessage = await verifyEmail(
+      formData.get("verificationCode") as string
+    );
+    setIsVerifying(false);
+    if (errorMessage) return toast.error(errorMessage);
 
     await router.invalidate();
 
     await navigate({ to: "/feedback" });
+  };
+
+  const backToSignup = async () => {
+    await signout();
+
+    navigate({ to: "/signup" });
   };
 
   return (
@@ -38,8 +53,9 @@ export default function EmailVerification() {
         <h1 className="mb-4 text-2xl font-bold text-center">
           Welcome to <span className="text-primary">Product Feedback</span>
         </h1>
-        <h2 className="mb-8 text-2xl font-bold text-center">
-          Verify your email
+        <h2 className="mb-8 text-xl font-bold text-center">
+          Verify your email at{" "}
+          <span className="text-lg text-slate-500">{user}</span>
         </h2>
 
         <form onSubmit={onSubmit}>
@@ -60,7 +76,8 @@ export default function EmailVerification() {
           <fieldset className="mt-8">
             <button
               type="submit"
-              className="w-full h-10 text-white rounded-md bg-primary"
+              className="w-full h-10 text-white rounded-md bg-primary disabled:opacity-50"
+              disabled={isVerifying}
             >
               Verify Email
             </button>
@@ -79,9 +96,12 @@ export default function EmailVerification() {
         <div className="flex justify-center mt-5">
           <p className="text-sm">
             Need to change your email?{" "}
-            <a href="/signup" className="font-medium text-secondary-blue">
+            <button
+              onClick={backToSignup}
+              className="font-medium text-secondary-blue"
+            >
               Go back to Sign Up
-            </a>
+            </button>
           </p>
         </div>
       </div>

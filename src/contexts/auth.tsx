@@ -5,10 +5,10 @@ import { flushSync } from "react-dom";
 export interface AuthContext {
   isAuthenticated: boolean;
   isEmailVerified: boolean;
-  signup: (formData: FormData) => Promise<void>;
-  signin: (formData: FormData) => Promise<void>;
+  signup: (formData: FormData) => Promise<void | string>;
+  signin: (formData: FormData) => Promise<void | string>;
   signout: () => Promise<void>;
-  verifyEmail: (verificationCode: string) => Promise<void>;
+  verifyEmail: (verificationCode: string) => Promise<void | string>;
   user: string | null;
 }
 
@@ -32,8 +32,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       credentials: "include",
     });
 
-    if (!res.ok) console.log(res.status);
-    else {
+    if (!res.ok) {
+      const { message } = await res.json();
+      return message;
+    } else {
       flushSync(() => {
         setUser(formData.get("email") as string);
         setIsEmailVerified(false);
@@ -47,7 +49,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       credentials: "include",
     });
 
-    flushSync(() => setUser(null));
+    flushSync(() => {
+      setUser(null);
+      setIsEmailVerified(false);
+    });
   }, []);
 
   const signin = React.useCallback(async (formData: FormData) => {
@@ -63,9 +68,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       credentials: "include",
     });
 
-    if (!res.ok) console.log(res.status);
-    else {
-      flushSync(() => setUser(formData.get("email") as string));
+    if (!res.ok) {
+      const { message } = await res.json();
+      return message;
+    } else {
+      const data = await res.json();
+      flushSync(() => {
+        setUser(data.email);
+        setIsEmailVerified(data.emailVerified);
+      });
     }
   }, []);
 
@@ -81,8 +92,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     });
 
-    if (!res.ok) console.log(res.status);
-    else {
+    if (!res.ok) {
+      const { message } = await res.json();
+      return message;
+    } else {
       flushSync(() => {
         setIsEmailVerified(true);
       });

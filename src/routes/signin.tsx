@@ -9,6 +9,7 @@ import { FaGithub, FaGoogle } from "react-icons/fa";
 import { useAuth } from "../contexts/auth";
 import { z } from "zod";
 import { fallbackPath } from "../lib";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/signin")({
   validateSearch: z.object({
@@ -39,7 +40,9 @@ export function Signin() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    await signin(formData);
+    const errorMessage = await signin(formData);
+
+    if (errorMessage) return toast.error(errorMessage);
 
     await router.invalidate();
 
@@ -73,16 +76,13 @@ export function Signin() {
                 type="password"
                 className="w-full h-10 border border-transparent rounded-md focus:ring-0 focus:border-secondary-blue bg-pale-grey"
                 name="password"
+                minLength={6}
               />
             </label>
           </fieldset>
 
           <fieldset>
             <div className="flex justify-between my-5 text-sm">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" name="remember-me" />
-                Remember me
-              </label>
               <button type="button" className="font-medium text-secondary-blue">
                 Forgot your password?
               </button>

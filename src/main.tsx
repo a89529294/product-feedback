@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import "./index.css";
+import { Toaster } from "@/components/ui/sonner";
 
 import { routeTree } from "./routeTree.gen";
 import { AuthProvider, useAuth } from "./contexts/auth";
@@ -31,6 +32,7 @@ function App() {
   return (
     <AuthProvider>
       <InnerApp />
+      <Toaster richColors />
     </AuthProvider>
   );
 }
