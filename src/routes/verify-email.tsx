@@ -1,7 +1,7 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { useAuth } from "../contexts/auth";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useAuth } from "../contexts/auth";
 
 export const Route = createFileRoute("/verify-email")({
   beforeLoad: ({
@@ -23,6 +23,8 @@ export default function EmailVerification() {
   const navigate = Route.useNavigate();
   const { verifyEmail, user, signout } = useAuth();
   const [isVerifying, setIsVerifying] = useState(false);
+  const [code, setCode] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const onSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     setIsVerifying(true);
@@ -34,7 +36,11 @@ export default function EmailVerification() {
       formData.get("verificationCode") as string
     );
     setIsVerifying(false);
-    if (errorMessage) return toast.error(errorMessage);
+    if (errorMessage) {
+      setCode("");
+      inputRef.current!.focus();
+      return toast.error(errorMessage);
+    }
 
     await router.invalidate();
 
@@ -69,6 +75,9 @@ export default function EmailVerification() {
                 placeholder="Enter 8-digit code"
                 maxLength={8}
                 required
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                ref={inputRef}
               />
             </label>
           </fieldset>

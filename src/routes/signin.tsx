@@ -83,9 +83,12 @@ export function Signin() {
 
           <fieldset>
             <div className="flex justify-between my-5 text-sm">
-              <button type="button" className="font-medium text-secondary-blue">
+              <Link
+                to="/reset-password"
+                className="font-medium text-secondary-blue"
+              >
                 Forgot your password?
-              </button>
+              </Link>
             </div>
 
             <button
