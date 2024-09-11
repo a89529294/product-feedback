@@ -19,6 +19,7 @@ import { Route as SigninImport } from './routes/signin'
 import { Route as ResetPasswordImport } from './routes/reset-password'
 import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
+import { Route as NewPasswordTokenImport } from './routes/new-password.$token'
 import { Route as AuthFeedbackImport } from './routes/_auth.feedback'
 
 // Create Virtual Routes
@@ -59,6 +60,11 @@ const AuthRoute = AuthImport.update({
 
 const IndexRoute = IndexImport.update({
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const NewPasswordTokenRoute = NewPasswordTokenImport.update({
+  path: '/new-password/$token',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -127,6 +133,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthFeedbackImport
       parentRoute: typeof AuthImport
     }
+    '/new-password/$token': {
+      id: '/new-password/$token'
+      path: '/new-password/$token'
+      fullPath: '/new-password/$token'
+      preLoaderRoute: typeof NewPasswordTokenImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -151,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof VerifyEmailRoute
   '/about': typeof AboutLazyRoute
   '/feedback': typeof AuthFeedbackRoute
+  '/new-password/$token': typeof NewPasswordTokenRoute
 }
 
 export interface FileRoutesByTo {
@@ -162,6 +176,7 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/about': typeof AboutLazyRoute
   '/feedback': typeof AuthFeedbackRoute
+  '/new-password/$token': typeof NewPasswordTokenRoute
 }
 
 export interface FileRoutesById {
@@ -174,6 +189,7 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/about': typeof AboutLazyRoute
   '/_auth/feedback': typeof AuthFeedbackRoute
+  '/new-password/$token': typeof NewPasswordTokenRoute
 }
 
 export interface FileRouteTypes {
@@ -187,6 +203,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/about'
     | '/feedback'
+    | '/new-password/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -197,6 +214,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/about'
     | '/feedback'
+    | '/new-password/$token'
   id:
     | '__root__'
     | '/'
@@ -207,6 +225,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/about'
     | '/_auth/feedback'
+    | '/new-password/$token'
   fileRoutesById: FileRoutesById
 }
 
@@ -218,6 +237,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   AboutLazyRoute: typeof AboutLazyRoute
+  NewPasswordTokenRoute: typeof NewPasswordTokenRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -228,6 +248,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   AboutLazyRoute: AboutLazyRoute,
+  NewPasswordTokenRoute: NewPasswordTokenRoute,
 }
 
 export const routeTree = rootRoute
@@ -248,7 +269,8 @@ export const routeTree = rootRoute
         "/signin",
         "/signup",
         "/verify-email",
-        "/about"
+        "/about",
+        "/new-password/$token"
       ]
     },
     "/": {
@@ -278,6 +300,9 @@ export const routeTree = rootRoute
     "/_auth/feedback": {
       "filePath": "_auth.feedback.tsx",
       "parent": "/_auth"
+    },
+    "/new-password/$token": {
+      "filePath": "new-password.$token.tsx"
     }
   }
 }
