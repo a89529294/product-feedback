@@ -43,7 +43,6 @@ export function Signup() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    await new Promise((r) => setTimeout(r, 1000));
     const errorMessage = await signup(formData);
     setIsVerifying(false);
 

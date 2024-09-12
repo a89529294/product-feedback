@@ -21,21 +21,21 @@ export const Route = createFileRoute("/verify-email")({
 export default function EmailVerification() {
   const router = useRouter();
   const navigate = Route.useNavigate();
-  const { verifyEmail, user, signout } = useAuth();
-  const [isVerifying, setIsVerifying] = useState(false);
+  const { verifyEmail, user, signout, sendVerificationEmail } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tryAgainDuration, setTryAgainDuration] = useState(0);
   const [code, setCode] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const onSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
-    setIsVerifying(true);
+    setIsSubmitting(true);
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    await new Promise((r) => setTimeout(r, 1000));
     const errorMessage = await verifyEmail(
       formData.get("verificationCode") as string
     );
-    setIsVerifying(false);
+    setIsSubmitting(false);
     if (errorMessage) {
       setCode("");
       inputRef.current!.focus();
@@ -51,6 +51,27 @@ export default function EmailVerification() {
     await signout();
 
     navigate({ to: "/signup" });
+  };
+
+  const resendVerificationEmail = async () => {
+    setTryAgainDuration(15);
+    const intervalId = setInterval(() => {
+      setTryAgainDuration((duration) => {
+        if (duration > 1) return --duration;
+
+        clearInterval(intervalId);
+        return 0;
+      });
+    }, 1000);
+
+    const message = await sendVerificationEmail(user!);
+
+    if (message) {
+      toast.error(message);
+      setTryAgainDuration(0);
+    } else {
+      toast.success("Email sent");
+    }
   };
 
   return (
@@ -86,7 +107,7 @@ export default function EmailVerification() {
             <button
               type="submit"
               className="w-full h-10 text-white rounded-md bg-primary disabled:opacity-50"
-              disabled={isVerifying}
+              disabled={isSubmitting}
             >
               Verify Email
             </button>
@@ -94,12 +115,26 @@ export default function EmailVerification() {
         </form>
 
         <div className="flex justify-center mt-5">
-          <p className="text-sm">
-            Didn't receive the code?{" "}
-            <button type="button" className="font-medium text-secondary-blue">
+          <div className="flex gap-1 text-sm">
+            Didn't receive the code?
+            <button
+              onClick={resendVerificationEmail}
+              type="button"
+              className="font-medium text-secondary-blue disabled:opacity-50"
+              disabled={tryAgainDuration > 0}
+            >
               Resend Code
             </button>
-          </p>
+            {tryAgainDuration > 0 && (
+              <div className="flex gap-1 px-1 rounded-full bg-slate-300 ">
+                <div>Try again in</div>
+                <div className="font-mono ">
+                  {tryAgainDuration.toString().padStart(2, "0")}
+                </div>
+                <div>s</div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-center mt-5">

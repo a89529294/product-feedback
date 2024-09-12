@@ -9,6 +9,7 @@ export interface AuthContext {
   signin: (formData: FormData) => Promise<void | string>;
   signout: () => Promise<void>;
   verifyEmail: (verificationCode: string) => Promise<void | string>;
+  sendVerificationEmail: (email: string) => Promise<void | string>;
   user: string | null;
 }
 
@@ -18,6 +19,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isEmailVerified, setIsEmailVerified] = React.useState(false);
   const [user, setUser] = React.useState<string | null>(null);
   const isAuthenticated = !!user;
+
+  const sendVerificationEmail = React.useCallback(async (email: string) => {
+    const res = await fetch(`${apiURL}/resend-email-verification-code`, {
+      method: "POST",
+      body: JSON.stringify({
+        email,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+
+    const { message } = await res.json();
+
+    if (!res.ok) return message;
+  }, []);
 
   const signup = React.useCallback(async (formData: FormData) => {
     const res = await fetch(`${apiURL}/signup`, {
@@ -55,30 +73,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const signin = React.useCallback(async (formData: FormData) => {
-    const res = await fetch(`${apiURL}/signin`, {
-      method: "POST",
-      body: JSON.stringify({
-        email: formData.get("email"),
-        password: formData.get("password"),
-      }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    });
-
-    if (!res.ok) {
-      const { message } = await res.json();
-      return message;
-    } else {
-      const data = await res.json();
-      flushSync(() => {
-        setUser(data.email);
-        setIsEmailVerified(data.emailVerified);
+  const signin = React.useCallback(
+    async (formData: FormData) => {
+      const res = await fetch(`${apiURL}/signin`, {
+        method: "POST",
+        body: JSON.stringify({
+          email: formData.get("email"),
+          password: formData.get("password"),
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
       });
-    }
-  }, []);
+
+      if (!res.ok) {
+        const { message } = await res.json();
+        return message;
+      } else {
+        const data = await res.json();
+
+        if (!data.emailVerified) {
+          sendVerificationEmail(formData.get("email") as string);
+        }
+
+        flushSync(() => {
+          setUser(data.email);
+          setIsEmailVerified(data.emailVerified);
+        });
+      }
+    },
+    [sendVerificationEmail]
+  );
 
   const verifyEmail = React.useCallback(async (verificationCode: string) => {
     const res = await fetch(`${apiURL}/email-verification`, {
@@ -133,6 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signout,
         signup,
         verifyEmail,
+        sendVerificationEmail,
       }}
     >
       {children}
