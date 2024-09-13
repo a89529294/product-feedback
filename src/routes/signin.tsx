@@ -1,15 +1,16 @@
+import { cn } from "@/lib/utils";
 import {
   createFileRoute,
   Link,
-  useRouter,
-  redirect,
   Navigate,
+  redirect,
+  useRouter,
 } from "@tanstack/react-router";
 import { FaGithub, FaGoogle } from "react-icons/fa";
-import { useAuth } from "../contexts/auth";
-import { z } from "zod";
-import { fallbackPath } from "../lib";
 import { toast } from "sonner";
+import { z } from "zod";
+import { useAuth } from "../contexts/auth";
+import { fallbackPath } from "../lib";
 
 export const Route = createFileRoute("/signin")({
   validateSearch: z.object({
@@ -17,15 +18,13 @@ export const Route = createFileRoute("/signin")({
   }),
   beforeLoad: ({
     context: {
-      auth: { isAuthenticated, isEmailVerified },
+      auth: { isAuthenticated, isNeedingEmailVerification },
     },
     search,
   }) => {
-    if (isAuthenticated && isEmailVerified) {
+    if (isAuthenticated && !isNeedingEmailVerification)
       throw redirect({ to: search.redirect || fallbackPath });
-    } else if (isAuthenticated) {
-      throw redirect({ to: "/verify-email" });
-    }
+    if (isNeedingEmailVerification) throw redirect({ to: "/verify-email" });
   },
   component: () => <Signin />,
 });
@@ -34,13 +33,16 @@ export function Signin() {
   const router = useRouter();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const { signin, isAuthenticated } = useAuth();
+  const { signin, isSubmitting, isAuthenticated, isNeedingEmailVerification } =
+    useAuth();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const email = formData.get("email")!.toString().trim();
+    const password = formData.get("password")!.toString().trim();
 
-    const errorMessage = await signin(formData);
+    const errorMessage = await signin(email, password);
 
     if (errorMessage) return toast.error(errorMessage);
 
@@ -48,9 +50,13 @@ export function Signin() {
 
     await navigate({ to: search.redirect || fallbackPath });
   }
+
   return (
     <main className="flex items-center h-screen">
-      {isAuthenticated && <Navigate to={search.redirect || fallbackPath} />}
+      {isAuthenticated && !isNeedingEmailVerification && (
+        <Navigate to={search.redirect || fallbackPath} />
+      )}
+      {isNeedingEmailVerification && <Navigate to="/verify-email" />}
       <div className="mx-auto w-80 md:w-96">
         <h1 className="mb-4 text-2xl font-bold text-center">
           Welcome to <span className="text-primary">Product Feedback</span>
@@ -93,7 +99,8 @@ export function Signin() {
 
             <button
               type="submit"
-              className="w-full h-10 text-white rounded-md bg-primary"
+              className="w-full h-10 text-white rounded-md bg-primary disabled:opacity-50"
+              disabled={isSubmitting}
             >
               Sign in
             </button>
@@ -110,14 +117,25 @@ export function Signin() {
           </div>
 
           <div className="flex gap-4">
-            <button className="flex items-center justify-center flex-1 h-10 gap-3 text-white rounded-md bg-secondary-blue">
+            <a
+              href="http://localhost:3000/login/github"
+              className="flex items-center justify-center flex-1 h-10 gap-3 text-white rounded-md bg-secondary-blue disabled:opacity-50"
+              // disabled={isSubmitting}
+              // onClick={onGithubSignin}
+            >
               <FaGithub />
               Github
-            </button>
-            <button className="flex items-center justify-center flex-1 h-10 gap-3 text-white rounded-md bg-secondary-indigo">
+            </a>
+            <a
+              href=""
+              className={cn(
+                "flex items-center justify-center flex-1 h-10 gap-3 text-white rounded-md bg-secondary-indigo disabled:opacity-50",
+                isSubmitting && "pointer-events-none opacity-50"
+              )}
+            >
               <FaGoogle />
               Google
-            </button>
+            </a>
           </div>
 
           <div className="flex justify-center mt-5">
@@ -126,7 +144,8 @@ export function Signin() {
               <Link
                 from="/signin"
                 to="/signup"
-                className="font-medium text-secondary-blue"
+                className="font-medium text-secondary-blue disabled:opacity-50"
+                disabled={isSubmitting}
               >
                 Sign up
               </Link>

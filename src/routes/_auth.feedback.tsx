@@ -7,11 +7,17 @@ export const Route = createFileRoute("/_auth/feedback")({
 });
 
 function IndexPage() {
-  const auth = useAuth();
+  const { user } = useAuth();
+  const username =
+    user.type === "oauth"
+      ? user.username
+      : user.type === "email"
+        ? user.email
+        : "";
 
   return (
     <section className="grid gap-2 p-2">
-      <p>Hi {auth.user}!</p>
+      <p>Hi {username}!</p>
       <p>You are currently on the dashboard route.</p>
     </section>
   );

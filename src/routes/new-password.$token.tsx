@@ -1,9 +1,18 @@
-import { apiURL } from "@/lib";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { useAuth } from "@/contexts/auth";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/new-password/$token")({
+  beforeLoad: ({
+    context: {
+      auth: { user },
+    },
+  }) => {
+    if (user.type !== "email") {
+      throw redirect({ to: "/feedback" });
+    }
+  },
   component: () => <NewPassword />,
 });
 
@@ -13,8 +22,8 @@ export default function NewPassword() {
   const { token } = Route.useParams();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const newPasswordRef = useRef<HTMLInputElement>(null);
+  const { replacePassword, isSubmitting } = useAuth();
 
   // refactor this into /contexts/auth.tsx,
   // also set user and isAuthenticated
@@ -31,24 +40,11 @@ export default function NewPassword() {
       return;
     }
 
-    setIsSubmitting(true);
+    const data = await replacePassword(trimmedNewPassword, token);
 
-    const res = await fetch(`${apiURL}/reset-password/${token}`, {
-      method: "POST",
-      body: JSON.stringify({
-        password: newPassword,
-      }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    });
-
-    const { message } = await res.json();
-
-    if (!res.ok) toast.error(message);
+    if ("errorMessage" in data) toast.error(data.errorMessage);
     else {
-      toast.success(message);
+      toast.success(data.successMessage);
 
       await router.invalidate();
 

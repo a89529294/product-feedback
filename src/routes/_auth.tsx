@@ -10,11 +10,11 @@ import { useAuth } from "../contexts/auth";
 export const Route = createFileRoute("/_auth")({
   beforeLoad: ({
     context: {
-      auth: { isAuthenticated, isEmailVerified },
+      auth: { isAuthenticated, isNeedingEmailVerification },
     },
     location,
   }) => {
-    if (!isAuthenticated && !isEmailVerified) {
+    if (!isAuthenticated) {
       throw redirect({
         to: "/signin",
         search: {
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_auth")({
       });
     }
 
-    if (isAuthenticated && !isEmailVerified) {
+    if (isAuthenticated && isNeedingEmailVerification) {
       throw redirect({ to: "/verify-email" });
     }
   },

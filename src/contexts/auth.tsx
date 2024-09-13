@@ -2,25 +2,103 @@ import * as React from "react";
 import { apiURL } from "../lib";
 import { flushSync } from "react-dom";
 
+export type User =
+  | {
+      type: "email";
+      email: string;
+      isEmailVerified: boolean;
+    }
+  | {
+      type: "oauth";
+      username: string;
+    }
+  | {
+      type: "signedOut";
+    };
+
 export interface AuthContext {
   isAuthenticated: boolean;
-  isEmailVerified: boolean;
-  signup: (formData: FormData) => Promise<void | string>;
-  signin: (formData: FormData) => Promise<void | string>;
+  isNeedingEmailVerification: boolean;
+  isSubmitting: boolean;
+  signup: (email: string, password: string) => Promise<void | string>;
+  signin: (email: string, password: string) => Promise<void | string>;
   signout: () => Promise<void>;
   verifyEmail: (verificationCode: string) => Promise<void | string>;
   sendVerificationEmail: (email: string) => Promise<void | string>;
-  user: string | null;
+  resetPassword: (
+    email: string
+  ) => Promise<{ errorMessage: string } | { successMessage: string }>;
+  replacePassword: (
+    newPassword: string,
+    token: string
+  ) => Promise<{ errorMessage: string } | { successMessage: string }>;
+  user: User;
 }
 
 const AuthContext = React.createContext<AuthContext | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isEmailVerified, setIsEmailVerified] = React.useState(false);
-  const [user, setUser] = React.useState<string | null>(null);
-  const isAuthenticated = !!user;
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [user, setUser] = React.useState<User>({
+    type: "signedOut",
+  });
+  const authType = user.type;
+  const isAuthenticated = user.type === "oauth" || user.type === "email";
+  const isNeedingEmailVerification =
+    user.type === "email" && !user.isEmailVerified;
+
+  const replacePassword = React.useCallback(
+    async (newPassword: string, token: string) => {
+      setIsSubmitting(true);
+
+      const res = await fetch(`${apiURL}/reset-password/${token}`, {
+        method: "POST",
+        body: JSON.stringify({
+          password: newPassword,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+
+      const { message } = await res.json();
+
+      setIsSubmitting(false);
+
+      if (!res.ok)
+        return {
+          errorMessage: message,
+        };
+      return {
+        successMessage: message,
+      };
+    },
+    []
+  );
+
+  const resetPassword = React.useCallback(async (email: string) => {
+    setIsSubmitting(true);
+    const res = await fetch(`${apiURL}/reset-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+      credentials: "include",
+    });
+
+    const { message } = await res.json();
+
+    setIsSubmitting(false);
+
+    if (!res.ok) return { errorMessage: message };
+
+    return { successMessage: message };
+  }, []);
 
   const sendVerificationEmail = React.useCallback(async (email: string) => {
+    setIsSubmitting(true);
     const res = await fetch(`${apiURL}/resend-email-verification-code`, {
       method: "POST",
       body: JSON.stringify({
@@ -33,53 +111,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     const { message } = await res.json();
+    setIsSubmitting(false);
 
     if (!res.ok) return message;
   }, []);
 
-  const signup = React.useCallback(async (formData: FormData) => {
+  const signup = React.useCallback(async (email: string, password: string) => {
+    setIsSubmitting(true);
     const res = await fetch(`${apiURL}/signup`, {
       method: "POST",
       body: JSON.stringify({
-        email: formData.get("email"),
-        password: formData.get("password"),
+        email,
+        password,
       }),
       headers: {
         "Content-Type": "application/json",
       },
       credentials: "include",
     });
+    setIsSubmitting(false);
 
     if (!res.ok) {
       const { message } = await res.json();
       return message;
     } else {
       flushSync(() => {
-        setUser(formData.get("email") as string);
-        setIsEmailVerified(false);
+        setUser({
+          type: "email",
+          email,
+          isEmailVerified: false,
+        });
       });
     }
   }, []);
 
   const signout = React.useCallback(async () => {
+    setIsSubmitting(true);
     await fetch(`${apiURL}/signout`, {
       method: "POST",
       credentials: "include",
     });
+    setIsSubmitting(false);
 
     flushSync(() => {
-      setUser(null);
-      setIsEmailVerified(false);
+      setUser({
+        type: "signedOut",
+      });
     });
   }, []);
 
   const signin = React.useCallback(
-    async (formData: FormData) => {
+    async (email: string, password: string) => {
+      setIsSubmitting(true);
       const res = await fetch(`${apiURL}/signin`, {
         method: "POST",
         body: JSON.stringify({
-          email: formData.get("email"),
-          password: formData.get("password"),
+          email,
+          password,
         }),
         headers: {
           "Content-Type": "application/json",
@@ -89,62 +177,94 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!res.ok) {
         const { message } = await res.json();
+        setIsSubmitting(false);
         return message;
       } else {
         const data = await res.json();
+        setIsSubmitting(false);
 
         if (!data.emailVerified) {
-          sendVerificationEmail(formData.get("email") as string);
+          sendVerificationEmail(email);
         }
 
         flushSync(() => {
-          setUser(data.email);
-          setIsEmailVerified(data.emailVerified);
+          setUser({
+            type: "email",
+            email: data.email,
+            isEmailVerified: data.isEmailVerified,
+          });
         });
       }
     },
     [sendVerificationEmail]
   );
 
-  const verifyEmail = React.useCallback(async (verificationCode: string) => {
-    const res = await fetch(`${apiURL}/email-verification`, {
-      method: "POST",
-      body: JSON.stringify({
-        verificationCode,
-      }),
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+  const verifyEmail = React.useCallback(
+    async (verificationCode: string) => {
+      if (authType !== "email") return;
 
-    if (!res.ok) {
-      const { message } = await res.json();
-      return message;
-    } else {
-      flushSync(() => {
-        setIsEmailVerified(true);
+      setIsSubmitting(true);
+      const res = await fetch(`${apiURL}/email-verification`, {
+        method: "POST",
+        body: JSON.stringify({
+          verificationCode,
+        }),
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-    }
-  }, []);
+      setIsSubmitting(false);
+
+      if (!res.ok) {
+        const { message } = await res.json();
+        return message;
+      } else {
+        flushSync(() => {
+          setUser({
+            ...user,
+            isEmailVerified: true,
+          });
+        });
+      }
+    },
+    [authType, user]
+  );
 
   React.useEffect(() => {
     (async () => {
+      setIsSubmitting(true);
       try {
         const res = await fetch(`${apiURL}/validate-session`, {
           credentials: "include",
         });
 
-        if (!res.ok) setUser(null);
+        if (!res.ok) setUser({ type: "signedOut" });
         else {
           const data = await res.json();
           flushSync(() => {
-            setUser(data.email);
-            setIsEmailVerified(data.emailVerified);
+            // email/password signin
+            if (data.email) {
+              setUser({
+                type: "email",
+                email: data.email,
+                isEmailVerified: data.isEmailVerified,
+              });
+            }
+
+            // github signin
+            if (data.githubId) {
+              setUser({
+                type: "oauth",
+                username: data.username,
+              });
+            }
           });
         }
       } catch (e) {
         console.log(e);
+      } finally {
+        setIsSubmitting(false);
       }
     })();
   }, []);
@@ -153,13 +273,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         isAuthenticated,
-        isEmailVerified,
+        isNeedingEmailVerification,
+        isSubmitting,
         user,
         signin,
         signout,
         signup,
         verifyEmail,
         sendVerificationEmail,
+        resetPassword,
+        replacePassword,
       }}
     >
       {children}

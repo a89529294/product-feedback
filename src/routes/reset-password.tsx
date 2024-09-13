@@ -1,15 +1,14 @@
-import { apiURL } from "@/lib";
+import { useAuth } from "@/contexts/auth";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/reset-password")({
   beforeLoad: ({
     context: {
-      auth: { isAuthenticated, isEmailVerified },
+      auth: { user },
     },
   }) => {
-    if (isAuthenticated && isEmailVerified) {
+    if (user.type !== "email") {
       throw redirect({ to: "/feedback" });
     }
   },
@@ -17,35 +16,17 @@ export const Route = createFileRoute("/reset-password")({
 });
 
 export function ResetPassword() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [email, setEmail] = useState("");
-  const emailRef = useRef<HTMLInputElement>(null);
+  const { resetPassword, isSubmitting } = useAuth();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setIsSubmitting(true);
-    const emailTrimmed = email.trim();
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email")!.toString().trim();
 
-    if (!emailTrimmed) {
-      emailRef.current!.focus();
-      setEmail("");
-      return setIsSubmitting(false);
-    }
+    const data = await resetPassword(email);
 
-    const res = await fetch(`${apiURL}/reset-password`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-      credentials: "include",
-    });
-
-    const { message } = await res.json();
-    if (!res.ok) toast.error(message);
-    else toast.success(message);
-
-    setIsSubmitting(false);
+    if ("errorMessage" in data) toast.error(data.errorMessage);
+    else toast.success(data.successMessage);
   }
 
   return (
@@ -71,9 +52,6 @@ export function ResetPassword() {
                   name="email"
                   placeholder="Enter your email"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  ref={emailRef}
                 />
               </label>
             </div>

@@ -6,11 +6,10 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import { FaGithub, FaGoogle } from "react-icons/fa";
-import { useAuth } from "../contexts/auth";
-import { z } from "zod";
-import { fallbackPath } from "../lib";
 import { toast } from "sonner";
-import { useState } from "react";
+import { z } from "zod";
+import { useAuth } from "../contexts/auth";
+import { fallbackPath } from "../lib";
 
 export const Route = createFileRoute("/signup")({
   validateSearch: z.object({
@@ -18,15 +17,14 @@ export const Route = createFileRoute("/signup")({
   }),
   beforeLoad: ({
     context: {
-      auth: { isAuthenticated, isEmailVerified },
+      auth: { isAuthenticated, isNeedingEmailVerification },
     },
     search,
   }) => {
-    if (isAuthenticated && isEmailVerified) {
+    if (isAuthenticated && !isNeedingEmailVerification) {
       throw redirect({ to: search.redirect || fallbackPath });
-    } else if (isAuthenticated) {
-      throw redirect({ to: "/verify-email" });
     }
+    if (isNeedingEmailVerification) throw redirect({ to: "/verify-email" });
   },
   component: () => <Signup />,
 });
@@ -35,16 +33,15 @@ export function Signup() {
   const router = useRouter();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const { signup, isAuthenticated } = useAuth();
-  const [isVerifying, setIsVerifying] = useState(false);
+  const { signup, isAuthenticated, isSubmitting } = useAuth();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    setIsVerifying(true);
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const email = formData.get("email")!.toString().trim();
+    const password = formData.get("password")!.toString().trim();
 
-    const errorMessage = await signup(formData);
-    setIsVerifying(false);
+    const errorMessage = await signup(email, password);
 
     if (errorMessage) return toast.error(errorMessage);
 
@@ -52,6 +49,7 @@ export function Signup() {
 
     await navigate({ to: "/verify-email" });
   }
+
   return (
     <main className="flex items-center h-screen">
       {isAuthenticated && <Navigate to={search.redirect || fallbackPath} />}
@@ -89,7 +87,7 @@ export function Signup() {
             <button
               type="submit"
               className="w-full h-10 mt-5 text-white rounded-md bg-primary disabled:opacity-50"
-              disabled={isVerifying}
+              disabled={isSubmitting}
             >
               Sign up
             </button>
