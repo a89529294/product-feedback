@@ -127,7 +127,7 @@ export function Signin() {
               Github
             </a>
             <a
-              href=""
+              href="http://localhost:3000/login/google"
               className={cn(
                 "flex items-center justify-center flex-1 h-10 gap-3 text-white rounded-md bg-secondary-indigo disabled:opacity-50",
                 isSubmitting && "pointer-events-none opacity-50"

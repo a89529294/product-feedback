@@ -9,7 +9,11 @@ export type User =
       isEmailVerified: boolean;
     }
   | {
-      type: "oauth";
+      type: "github";
+      username: string;
+    }
+  | {
+      type: "google";
       username: string;
     }
   | {
@@ -33,6 +37,7 @@ export interface AuthContext {
     token: string
   ) => Promise<{ errorMessage: string } | { successMessage: string }>;
   user: User;
+  username: string;
 }
 
 const AuthContext = React.createContext<AuthContext | null>(null);
@@ -43,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     type: "signedOut",
   });
   const authType = user.type;
-  const isAuthenticated = user.type === "oauth" || user.type === "email";
+  const isAuthenticated = user.type !== "signedOut";
   const isNeedingEmailVerification =
     user.type === "email" && !user.isEmailVerified;
 
@@ -252,10 +257,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               });
             }
 
-            // github signin
-            if (data.githubId) {
+            // oauth signin
+            if (data.oauthProviderName) {
               setUser({
-                type: "oauth",
+                type: data.oauthProviderName,
                 username: data.username,
               });
             }
@@ -283,6 +288,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         sendVerificationEmail,
         resetPassword,
         replacePassword,
+        username:
+          user.type === "signedOut"
+            ? ""
+            : user.type === "email"
+              ? user.email
+              : user.username,
       }}
     >
       {children}
