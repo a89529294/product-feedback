@@ -120,8 +120,6 @@ export function Signin() {
             <a
               href="http://localhost:3000/login/github"
               className="flex items-center justify-center flex-1 h-10 gap-3 text-white rounded-md bg-secondary-blue disabled:opacity-50"
-              // disabled={isSubmitting}
-              // onClick={onGithubSignin}
             >
               <FaGithub />
               Github

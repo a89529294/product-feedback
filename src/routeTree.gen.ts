@@ -18,7 +18,7 @@ import { Route as ResetPasswordImport } from './routes/reset-password'
 import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
 import { Route as NewPasswordTokenImport } from './routes/new-password.$token'
-import { Route as AuthFeedbackImport } from './routes/_auth.feedback'
+import { Route as AuthFeedbackImport } from './routes/_auth/feedback'
 
 // Create/Update Routes
 
@@ -268,7 +268,7 @@ export const routeTree = rootRoute
       "filePath": "verify-email.tsx"
     },
     "/_auth/feedback": {
-      "filePath": "_auth.feedback.tsx",
+      "filePath": "_auth/feedback.tsx",
       "parent": "/_auth"
     },
     "/new-password/$token": {
